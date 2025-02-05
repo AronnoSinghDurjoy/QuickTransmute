@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Minimalist Converter</title>
+  <!-- Bootstrap CSS for responsiveness -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    crossorigin="anonymous"
+  />
+  <style>
+    /* Fullscreen minimal background */
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f0f4f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    /* Main container styling */
+    .converter-container {
+      width: 100%;
+      max-width: 600px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      animation: fadeIn 0.5s ease-out;
+    }
+    h1 {
+      text-align: center;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 1.5rem;
+    }
+    /* Minimalistic input fields */
+    .form-control, .form-select {
+      border-radius: 5px;
+      box-shadow: none;
+      border: 1px solid #ccc;
+      transition: border-color 0.3s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #5563de;
+      box-shadow: 0 0 0 0.2rem rgba(85, 99, 222, 0.25);
+    }
+    /* Minimal buttons */
+    .btn-custom {
+      border-radius: 50px;
+      padding: 0.5rem 1.5rem;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+    .btn-custom:hover {
+      transform: scale(1.05);
+    }
+    .btn-back {
+      background: #ff6f61;
+      border: none;
+      color: #fff;
+      border-radius: 50px;
+      padding: 0.3rem 1rem;
+      transition: background-color 0.2s;
+    }
+    .btn-back:hover {
+      background: #ff3b2e;
+    }
+    /* Output preview */
+    #outputArea {
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 1rem;
+      font-family: monospace;
+      white-space: pre-wrap;
+      margin-top: 1rem;
+    }
+    /* Fade-in animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Hide sections by default */
+    .section { display: none; }
+    .section.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="converter-container">
+    <h1>QuickTransmute</h1>
+    <!-- Input Mode Selection -->
+    <div class="mb-4">
+      <label for="inputType" class="form-label">Select Input Type:</label>
+      <select id="inputType" class="form-select">
+        <option value="text" selected>Plain Text</option>
+        <option value="pdf">PDF</option>
+        <option value="image">Image (JPG/PNG)</option>
+      </select>
+    </div>
+
+    <!-- Plain Text Section -->
+    <div id="textSection" class="section active">
+      <div class="mb-3">
+        <label for="inputText" class="form-label">Enter Text:</label>
+        <textarea id="inputText" class="form-control" rows="4" placeholder="e.g., John 30 123 Main St"></textarea>
+      </div>
+      <div class="mb-3">
+        <label for="fileInputText" class="form-label">Or Upload a Text File:</label>
+        <input type="file" id="fileInputText" class="form-control" accept=".txt">
+      </div>
+      <!-- Conversion options (only for text) -->
+      <div class="mb-3">
+        <label for="delimiterSelect" class="form-label">Delimiter:</label>
+        <select id="delimiterSelect" class="form-select">
+          <option value="whitespace">Whitespace</option>
+          <option value="comma">Comma (,)</option>
+          <option value="tab">Tab</option>
+          <option value="semicolon">Semicolon (;)</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="mb-3" id="customDelimiterDiv" style="display:none;">
+        <label for="customDelimiter" class="form-label">Custom Delimiter:</label>
+        <input type="text" id="customDelimiter" class="form-control" placeholder="Enter delimiter">
+      </div>
+      <div class="mb-3">
+        <label for="hasHeader" class="form-label">First Row is Header:</label>
+        <input type="checkbox" id="hasHeader">
+      </div>
+      <div class="mb-3">
+        <label for="outputFormat" class="form-label">Output Format:</label>
+        <select id="outputFormat" class="form-select">
+          <option value="csv">CSV</option>
+          <option value="json">JSON</option>
+          <option value="plaintext">Plain Text Table</option>
+          <option value="markdown">Markdown Table</option>
+          <option value="pdf">PDF</option>
+          <option value="png">PNG Image</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- PDF Section -->
+    <div id="pdfSection" class="section">
+      <div class="mb-3">
+        <label for="fileInputPDF" class="form-label">Upload PDF File:</label>
+        <input type="file" id="fileInputPDF" class="form-control" accept=".pdf">
+      </div>
+      <div class="text-end">
+        <button id="backFromPDF" class="btn btn-back">Back</button>
+      </div>
+    </div>
+
+    <!-- Image Section -->
+    <div id="imageSection" class="section">
+      <div class="mb-3">
+        <label for="fileInputImage" class="form-label">Upload Image File:</label>
+        <input type="file" id="fileInputImage" class="form-control" accept="image/*">
+      </div>
+      <div class="text-end">
+        <button id="backFromImage" class="btn btn-back">Back</button>
+      </div>
+    </div>
+
+    <!-- Convert Button -->
+    <div class="text-center mb-3">
+      <button id="convertBtn" class="btn btn-primary btn-custom">Convert</button>
+    </div>
+
+    <!-- Output Preview -->
+    <div id="outputArea"></div>
+    <div id="downloadLink" class="mt-2"></div>
+  </div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- html2canvas for image generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- pdf.js for PDF text extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.min.js"></script>
+  <!-- Tesseract.js for image OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
+  <script>
+    // Helper: read file as text.
+    function readFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = event => resolve(event.target.result);
+        reader.onerror = err => reject(err);
+        reader.readAsText(file);
+      });
+    }
+    
+    // Show custom delimiter input if "custom" is selected.
+    document.getElementById('delimiterSelect').addEventListener('change', function() {
+      document.getElementById('customDelimiterDiv').style.display = (this.value === 'custom') ? 'block' : 'none';
+    });
+    
+    // Switch visible section based on input type.
+    document.getElementById('inputType').addEventListener('change', function() {
+      const type = this.value;
+      // Hide all sections first.
+      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+      if (type === 'text') {
+        document.getElementById('textSection').classList.add('active');
+      } else if (type === 'pdf') {
+        document.getElementById('pdfSection').classList.add('active');
+      } else if (type === 'image') {
+        document.getElementById('imageSection').classList.add('active');
+      }
+    });
+    
+    // Back buttons simply set input type back to text.
+    document.getElementById('backFromPDF').addEventListener('click', () => {
+      document.getElementById('inputType').value = 'text';
+      document.getElementById('inputType').dispatchEvent(new Event('change'));
+    });
+    document.getElementById('backFromImage').addEventListener('click', () => {
+      document.getElementById('inputType').value = 'text';
+      document.getElementById('inputType').dispatchEvent(new Event('change'));
+    });
+    
+    // Determine delimiter from selection.
+    function getDelimiter() {
+      const selectVal = document.getElementById('delimiterSelect').value;
+      switch(selectVal) {
+        case 'whitespace': return /\s+/;
+        case 'comma': return /,/;
+        case 'tab': return /\t/;
+        case 'semicolon': return /;/;
+        case 'custom':
+          const custom = document.getElementById('customDelimiter').value;
+          return custom ? new RegExp(custom.split('').map(c => '\\' + c).join('')) : /\s+/;
+        default: return /\s+/;
+      }
+    }
+    
+    // Parse text input into header and rows.
+    function parseRecords(text) {
+      const lines = text.split('\n').filter(l => l.trim());
+      const delimiter = getDelimiter();
+      let headers = [];
+      const dataRows = [];
+      let start = 0;
+      const hasHeader = document.getElementById('hasHeader').checked;
+      
+      if (lines.length === 0) return { headers: [], records: [] };
+      
+      const firstTokens = lines[0].trim().split(delimiter).map(t => t.trim());
+      let maxFields = firstTokens.length;
+      
+      if (hasHeader) {
+        headers = firstTokens;
+        start = 1;
+      } else {
+        dataRows.push(firstTokens);
+      }
+      
+      for (let i = start; i < lines.length; i++) {
+        const tokens = lines[i].trim().split(delimiter).map(t => t.trim());
+        dataRows.push(tokens);
+        if (tokens.length > maxFields) maxFields = tokens.length;
+      }
+      
+      if (!hasHeader) {
+        headers = Array.from({length: maxFields}, (_, i) => `Field${i+1}`);
+      }
+      
+      // Normalize rows.
+      const records = dataRows.map(row => {
+        while (row.length < headers.length) row.push('');
+        return row;
+      });
+      
+      return { headers, records };
+    }
+    
+    // Output generators.
+    function generateCSV(headers, records) {
+      const lines = [];
+      lines.push(headers.map(f => `"${f}"`).join(','));
+      records.forEach(row => {
+        lines.push(row.map(f => `"${f}"`).join(','));
+      });
+      return lines.join('\n');
+    }
+    
+    function generateJSON(headers, records) {
+      const data = records.map(row => {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = row[i] || '');
+        return obj;
+      });
+      return JSON.stringify(data, null, 2);
+    }
+    
+    function getColumnWidths(headers, records) {
+      const widths = headers.map(h => h.length);
+      records.forEach(row => {
+        row.forEach((cell, i) => {
+          widths[i] = Math.max(widths[i], cell.length);
+        });
+      });
+      return widths;
+    }
+    
+    function generatePlainTextTable(headers, records) {
+      const widths = getColumnWidths(headers, records);
+      const pad = (str, len) => str.padEnd(len, ' ');
+      let output = '';
+      output += headers.map((h, i) => pad(h, widths[i])).join('  ') + '\n';
+      output += widths.map(w => '-'.repeat(w)).join('  ') + '\n';
+      records.forEach(row => {
+        output += row.map((cell, i) => pad(cell, widths[i])).join('  ') + '\n';
+      });
+      return output;
+    }
+    
+    function generateMarkdownTable(headers, records) {
+      const widths = getColumnWidths(headers, records);
+      const pad = (str, len) => str.padEnd(len, ' ');
+      let output = '';
+      output += '| ' + headers.map((h, i) => pad(h, widths[i])).join(' | ') + ' |\n';
+      output += '| ' + widths.map(w => '-'.repeat(w)).join(' | ') + ' |\n';
+      records.forEach(row => {
+        output += '| ' + row.map((cell, i) => pad(cell, widths[i])).join(' | ') + ' |\n';
+      });
+      return output;
+    }
+    
+    async function generatePDF(outputContent) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const lines = doc.splitTextToSize(outputContent, 180);
+      doc.text(lines, 10, 10);
+      return doc.output('blob');
+    }
+    
+    async function generatePNG() {
+      const area = document.getElementById('outputArea');
+      const canvas = await html2canvas(area, { backgroundColor: null });
+      return new Promise(resolve => {
+        canvas.toBlob(blob => resolve(blob), 'image/png');
+      });
+    }
+    
+    // Converters for PDF and Image to Text.
+    async function extractTextFromPDF(file) {
+      const reader = new FileReader();
+      return new Promise((resolve, reject) => {
+        reader.onload = async function() {
+          try {
+            const typedarray = new Uint8Array(this.result);
+            const pdf = await pdfjsLib.getDocument(typedarray).promise;
+            let text = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const content = await page.getTextContent();
+              const strings = content.items.map(item => item.str);
+              text += strings.join(' ') + '\n';
+            }
+            resolve(text);
+          } catch (err) { reject(err); }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    }
+    
+    async function extractTextFromImage(file) {
+      try {
+        const result = await Tesseract.recognize(file, 'eng', {
+          logger: m => console.log(m)
+        });
+        return result.data.text;
+      } catch (err) { throw err; }
+    }
+    
+    // Main conversion handler.
+    async function handleConvert() {
+      const type = document.getElementById('inputType').value;
+      const outputArea = document.getElementById('outputArea');
+      const downloadDiv = document.getElementById('downloadLink');
+      outputArea.textContent = '';
+      downloadDiv.innerHTML = '';
+      
+      if (type === 'text') {
+        let textInput = document.getElementById('inputText').value.trim();
+        const fileText = document.getElementById('fileInputText');
+        if (fileText.files && fileText.files[0]) {
+          try {
+            textInput = await readFile(fileText.files[0]);
+            document.getElementById('inputText').value = textInput;
+          } catch (err) {
+            outputArea.textContent = 'Error reading text file: ' + err;
+            return;
+          }
+        }
+        if (!textInput) {
+          outputArea.textContent = 'Please provide text input or upload a file.';
+          return;
+        }
+        const { headers, records } = parseRecords(textInput);
+        if (!headers.length || !records.length) {
+          outputArea.textContent = 'No valid records found.';
+          return;
+        }
+        const format = document.getElementById('outputFormat').value;
+        let outputContent = '';
+        let mime = 'text/plain';
+        let ext = 'txt';
+        switch(format) {
+          case 'csv':
+            outputContent = generateCSV(headers, records);
+            mime = 'text/csv';
+            ext = 'csv';
+            break;
+          case 'json':
+            outputContent = generateJSON(headers, records);
+            mime = 'application/json';
+            ext = 'json';
+            break;
+          case 'plaintext':
+            outputContent = generatePlainTextTable(headers, records);
+            ext = 'txt';
+            break;
+          case 'markdown':
+            outputContent = generateMarkdownTable(headers, records);
+            ext = 'md';
+            break;
+          case 'pdf':
+            outputContent = generatePlainTextTable(headers, records);
+            break;
+          case 'png':
+            outputContent = generatePlainTextTable(headers, records);
+            break;
+          default:
+            outputContent = generatePlainTextTable(headers, records);
+        }
+        
+        if (format === 'pdf') {
+          outputArea.textContent = outputContent;
+          try {
+            const blob = await generatePDF(outputContent);
+            const url = URL.createObjectURL(blob);
+            downloadDiv.innerHTML = `<a href="${url}" download="converted.pdf" class="btn btn-success btn-custom">Download PDF</a>`;
+          } catch (err) {
+            outputArea.textContent = 'Error generating PDF: ' + err;
+          }
+        } else if (format === 'png') {
+          outputArea.textContent = outputContent;
+          setTimeout(async () => {
+            try {
+              const blob = await generatePNG();
+              const url = URL.createObjectURL(blob);
+              downloadDiv.innerHTML = `<a href="${url}" download="converted.png" class="btn btn-success btn-custom">Download PNG Image</a>`;
+            } catch (err) {
+              outputArea.textContent = 'Error generating PNG image: ' + err;
+            }
+          }, 300);
+        } else {
+          outputArea.textContent = outputContent;
+          const blob = new Blob([outputContent], { type: mime });
+          const url = URL.createObjectURL(blob);
+          downloadDiv.innerHTML = `<a href="${url}" download="converted.${ext}" class="btn btn-success btn-custom">Download Converted File</a>`;
+        }
+      } else if (type === 'pdf') {
+        const filePDF = document.getElementById('fileInputPDF');
+        if (!(filePDF.files && filePDF.files[0])) {
+          outputArea.textContent = 'Please upload a PDF file.';
+          return;
+        }
+        try {
+          const text = await extractTextFromPDF(filePDF.files[0]);
+          outputArea.textContent = text;
+          const blob = new Blob([text], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          downloadDiv.innerHTML = `<a href="${url}" download="extracted.txt" class="btn btn-success btn-custom">Download Extracted Text</a>`;
+        } catch (err) {
+          outputArea.textContent = 'Error extracting text from PDF: ' + err;
+        }
+      } else if (type === 'image') {
+        const fileImage = document.getElementById('fileInputImage');
+        if (!(fileImage.files && fileImage.files[0])) {
+          outputArea.textContent = 'Please upload an image file.';
+          return;
+        }
+        try {
+          outputArea.textContent = 'Extracting text from image...';
+          const text = await extractTextFromImage(fileImage.files[0]);
+          outputArea.textContent = text;
+          const blob = new Blob([text], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          downloadDiv.innerHTML = `<a href="${url}" download="extracted.txt" class="btn btn-success btn-custom">Download Extracted Text</a>`;
+        } catch (err) {
+          outputArea.textContent = 'Error extracting text from image: ' + err;
+        }
+      }
+    }
+    
+    document.getElementById('convertBtn').addEventListener('click', handleConvert);
+  </script>
+</body>
+</html>
